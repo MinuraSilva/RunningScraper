@@ -1,0 +1,12 @@
+1. Create a scraper for Adidas.ca (no JS). Create a dummy write to DB class that simply writes to a text file.
+1. Decide on what calculated fields need to be added (e.g. discount percentage, data updated). Note: do not add gender size conversion since this can be done by modifying the query.
+1. Once that is done, create a template for the interface pattern for creating a site scraper
+1. Add tests for checking that the structure of the site has not changed and therefore the scraper should not have any issues.
+1. Add logging to a text file to notify when the scraper goes down either due to site refusing connection (403) or if the site structure has changed.
+1. Add ElasticSearch database (in Docker container) to save data. Decide what to do with old data - simply delete or keep until a number of days.
+1. Create a scraper for Nike.ca (requires JS for scraping size info. Need to use Selenium)
+1. Make a main method that calls all of the scrapers. Add a (bash) script that allows the main method to be called every x hours from the Ubuntu service manager thing.
+
+Separate github repo - Webpage
+1. Create a webpage that loads data from the ES database
+1. Allow users to create profiles to save items or create reminders when price drops below a certain price.
