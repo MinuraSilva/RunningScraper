@@ -1,20 +1,15 @@
+import logging
+
 import scrapy
 
-# for handling errback / errors
-
-import logging
-import re
-
-import tutorial.spiders.adidas_ca_availability as adidas_ca_availability
-
-from .adidas_ca_helpers import extract_item_code, append_selectors, headers
-from .adidas_ca_item_page import parse_item_page
+from .adidas_ca_helpers import headers
 from .adidas_ca_parse_main import parse_main
 
 # for handling errback / errors
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError
 from twisted.internet.error import TimeoutError, TCPTimedOutError
+
 
 class AdidasCaSpider(scrapy.Spider):
     name = "adidas_ca"
@@ -44,7 +39,7 @@ class AdidasCaSpider(scrapy.Spider):
                                  headers=self.headers)
                                  # errback=self.errback) # remov errback if not using errorback
 
-    # currently does nothing other than logging
+    # currently does nothing other than logging but can be configured to do other stuff as well
     def errback(self, failure):
         # log all failures
         self.logger.error(repr(failure))
