@@ -7,8 +7,9 @@ import re
 
 import tutorial.spiders.adidas_ca_availability as adidas_ca_availability
 
-from .adidas_ca_helpers import extract_item_code, get_price, append_selectors
+from .adidas_ca_helpers import extract_item_code, append_selectors, headers
 
+from .adidas_ca_item_page import parse_item_page
 
 class AdidasCaSpider(scrapy.Spider):
     name = "adidas_ca"
@@ -23,12 +24,7 @@ class AdidasCaSpider(scrapy.Spider):
     base_logger = logging.getLogger("")
     base_logger.addHandler(elevated_file_handler)
 
-    headers = {
-        "Host": "www.adidas.ca",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Connection": "keep-alive",
-    }
+    headers = headers
 
     def start_requests(self):
         urls = [
@@ -87,7 +83,7 @@ class AdidasCaSpider(scrapy.Spider):
 
                 # for colour_variatiton in cb_kwargs["sibling_variations"]
                 request = scrapy.Request(variation_url,
-                                         callback=self.parse_item_page,
+                                         callback=parse_item_page,
                                          headers=self.headers,
                                          cb_kwargs=cb_kwargs)
                 # yield cb_kwargs
@@ -95,7 +91,7 @@ class AdidasCaSpider(scrapy.Spider):
 
 
 
-        # todo: uncomment when done
+        # todo: uncomment when done; follow next link
         # next_page = response.css("div[class*=pagination__control--next] a::attr(href)").get()
         #
         # if next_page is not None:
@@ -160,82 +156,3 @@ class AdidasCaSpider(scrapy.Spider):
 
         return {"get_main": get_main, "get_siblings": get_siblings}
 
-    def parse_item_page(self, response, **kwargs):
-        cb_kwargs = kwargs
-        sidebar = response.css("div[class*='sidebar-wrapper']")
-
-        sale_price = sidebar.css("span[class*='price__value--sale']::text").get()
-        cb_kwargs["sale_price"] = get_price(sale_price)
-
-        original_price = sidebar.css("span[class*='price__value--crossed']::text").get()
-        cb_kwargs["original_price"] = get_price(original_price)
-
-        try:
-            cb_kwargs["sale_percentage"] = \
-                (cb_kwargs["original_price"] - cb_kwargs["sale_price"]) / cb_kwargs["original_price"]
-        except:
-            cb_kwargs["sale_percentage"] = 0
-
-        cb_kwargs["colour"] = sidebar.css("h5[class*='color']::text").get()
-
-        rating_selector = sidebar.css("button[data-auto-id*=rating-review]")
-        parse_rating = self.get_rating(rating_selector)
-        cb_kwargs["num_rating"] = parse_rating['num_ratings']
-        cb_kwargs["rating"] = parse_rating['rating']
-
-        item_key = extract_item_code(response.url)
-        cb_kwargs["item_key"] = item_key
-        availability_url = f'https://www.adidas.ca/api/products/tf/{item_key}/availability?sitePath=en'
-        cb_kwargs["availability_url"] = availability_url
-        cb_kwargs["category_tags"] = self.get_category_tags(response.css("div[class*='pre-header']"))
-        # remember to search both category_tags and brand_sub_category for tags.
-        img_url = response.css("link[id='pdp-hero-image']::attr(href)").get()
-        cb_kwargs["img_url"] = img_url.replace("images/h_320", "images/h_600")  # increase size of img to 600px
-
-
-        # before indexing, check to be sure that this is a product page (sometimes there are incorrect links to wrong
-        # pages). Also check that item stock != 0 and item sale_price < original price.
-        # If all of these conditions are not met, skip indexing and raise error.
-
-        request = scrapy.Request(availability_url,
-                                 callback=adidas_ca_availability.parse_availability,
-                                 headers=self.headers,
-                                 cb_kwargs=cb_kwargs)
-
-        yield request
-
-    def get_rating(self, rating_selector):
-        # 5 stars, each star goes from 12-88% If a star is not coloured, it will still be 12%
-        try:
-            num_ratings = int(rating_selector.css("::text").get())
-
-            ratings = rating_selector.css("div[class*='star-rating'][style*=width]::attr(style)")
-            max_stars = 5
-            assert len(ratings) == max_stars, "The number of rating stars found is not exactly 5"
-
-            star_sum = float(0)
-            for star_selector in ratings:
-                star = star_selector.get()
-                star_score = float(re.search(r'\d+(\.\d+)?', star).group())
-                # The value of each star varies from 12% to 88%, so need to do this to get actual value.
-                actual_score = (star_score-12) / (88-12)
-                star_sum += actual_score
-
-            star_sum /= max_stars  # normalize star score
-
-            return {"num_ratings": num_ratings, "rating": star_sum}
-        except:
-            return {"num_ratings": 0, "rating": float(0)}  # this will be encountered if there are no reviews and therefore no stars
-
-    def get_category_tags(self, pre_header_selector):
-        selectors = pre_header_selector.css("li[property='itemListElement'][typeof='ListItem'] span[property='name']")
-
-        category_tags = []
-        for category_selector in selectors:
-            category_name = category_selector.css("::text").get()
-            if category_name.lower() != 'home':
-                category_tags.append(category_name.lower())
-            else:
-                pass  # category names are taken from breadcrumbs list. Ignore 'Home' link.
-
-        return category_tags

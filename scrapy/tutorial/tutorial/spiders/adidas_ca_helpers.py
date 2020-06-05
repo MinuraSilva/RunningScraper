@@ -1,27 +1,17 @@
-import scrapy
-
 # for handling errback / errors
-from scrapy.spidermiddlewares.httperror import HttpError
-from twisted.internet.error import DNSLookupError
-from twisted.internet.error import TimeoutError, TCPTimedOutError
 
-import logging
 import re
 
-import json
-
+headers = {
+        "Host": "www.adidas.ca",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Connection": "keep-alive",
+    }
 
 def extract_item_code(url):
     code = re.search(r'\w\w\d\d\d\d', url).group()
     return code
-
-
-def get_price(price_string):
-
-    if type(price_string) == str:
-        return float(re.search(r'\d+(\.\d+)?', price_string).group())
-    else:
-        return float(-1)  # unable to find price
 
 
 def append_selectors(*args):
