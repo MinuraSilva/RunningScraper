@@ -1,12 +1,14 @@
 import scrapy
 
 # for handling errback / errors
-from scrapy.spidermiddlewares.httperror import HttpError
-from twisted.internet.error import DNSLookupError
-from twisted.internet.error import TimeoutError, TCPTimedOutError
 
 import logging
 import re
+
+import tutorial.spiders.adidas_ca_availability as adidas_ca_availability
+
+from .adidas_ca_helpers import extract_item_code, get_price, append_selectors
+
 
 class AdidasCaSpider(scrapy.Spider):
     name = "adidas_ca"
@@ -31,7 +33,7 @@ class AdidasCaSpider(scrapy.Spider):
     def start_requests(self):
         urls = [
             # 'https://www.adidas.ca/en/men-clothing-outlet',
-            'https://www.adidas.ca/en/men-outlet?price=price%3C50.0&start=528'
+            'https://www.adidas.ca/en/men-clothing-outlet?start=768'
         ]
 
         for url in urls:
@@ -56,47 +58,42 @@ class AdidasCaSpider(scrapy.Spider):
             cb_kwargs = dict()
 
             info_card = "div.gl-product-card__details"
-            main_item_url = item.css(self.append_selectors(info_card, "a::attr(href)")).get()
+            main_item_url = item.css(append_selectors(info_card, "a::attr(href)")).get()
             main_item_url = response.urljoin(main_item_url)
             cb_kwargs["main_item_url"] = main_item_url
-            item_key = self.extract_item_code(main_item_url)
-            cb_kwargs["item_key"] = item_key
+            main_item_key = extract_item_code(main_item_url)
+            cb_kwargs["main_item_key"] = main_item_key
 
-            cb_kwargs["item_title"] = item.css(self.append_selectors(info_card, 'span[class$="name"]::text')).get()
-            cb_kwargs["item_sub_brand"] = item.css(self.append_selectors(info_card, 'div[class$="category"]::text')).get()
-            cb_kwargs["item_type"] = item.css(self.append_selectors(info_card, 'div[class$="category"]::attr(title)')).get()
-            cb_kwargs["item_num_colours"] = item.css(self.append_selectors(info_card, 'div[class$="color"]::text')).get()
+            cb_kwargs["item_title"] = item.css(append_selectors(info_card, 'span[class$="name"]::text')).get()
+            cb_kwargs["item_sub_brand"] = item.css(append_selectors(info_card, 'div[class$="category"]::text')).get()
+            cb_kwargs["item_type"] = item.css(append_selectors(info_card, 'div[class$="category"]::attr(title)')).get()
+            cb_kwargs["item_num_colours"] = item.css(append_selectors(info_card, 'div[class$="color"]::text')).get()
 
             cb_kwargs["main_img_url"] = item.css("img:nth-child(1)::attr(src)").get()
             cb_kwargs["source_page"] = response.url
 
             try:
-                cb_kwargs["main_variation"] = parsed_variations['get_main'][item_key]
-                cb_kwargs["sibling_variations"] = parsed_variations['get_siblings'][item_key]
+                cb_kwargs["main_variation"] = parsed_variations['get_main'][main_item_key]
+                cb_kwargs["sibling_variations"] = parsed_variations['get_siblings'][main_item_key]
             except:
                 # dictionary lookup will fail if there are no variations
-                cb_kwargs["main_variation"] = "[]"
-                cb_kwargs["sibling_variations"] = "[]"
+                cb_kwargs["main_variation"] = [main_item_key]
+                cb_kwargs["sibling_variations"] = [main_item_key]
 
-            request = scrapy.Request(main_item_url,
-                                     callback=self.parse_item_page,
-                                     headers=self.headers,
-                                     cb_kwargs=cb_kwargs)
+            for variation in cb_kwargs["sibling_variations"]:
+                variation_url = self.get_variation_url(cb_kwargs["main_item_url"], variation)
 
-            yield request
+                print(variation_url)
 
-            # yield cb_kwargs
+                # for colour_variatiton in cb_kwargs["sibling_variations"]
+                request = scrapy.Request(variation_url,
+                                         callback=self.parse_item_page,
+                                         headers=self.headers,
+                                         cb_kwargs=cb_kwargs)
+                # yield cb_kwargs
+                yield request
 
-            # item_url = item.css('a.product-card__link-overlay::attr(href)').get()
-            # cb_kwargs["item_page_url"] = item_url
-            # cb_kwargs["source_page"] = response.url  # page where data was scraped from
-            # cb_kwargs["item_name"] = item.css("div.product-card__title::text").get()
-            # cb_kwargs["item_category"] = item.css("div.product-card__subtitle::text").get()
-            # cb_kwargs["num_colours"] = item.css('div[aria-label] span::text').get()
-            # cb_kwargs["original_price"] = item.css('div[data-test="product-price"]::text').get()
-            # cb_kwargs["sale_price"] = item.css('div[data-test="product-price-reduced"]::text').get()
-            # # cb_kwargs["discount_percentage"] = self.calculatePercentage(original_price, sale_price)
-            # cb_kwargs["image_url"] = item.css('img::attr(src)').get()
+
 
         # todo: uncomment when done
         # next_page = response.css("div[class*=pagination__control--next] a::attr(href)").get()
@@ -106,6 +103,18 @@ class AdidasCaSpider(scrapy.Spider):
         #     yield scrapy.Request(next_page,
         #                          self.parse,
         #                          headers=self.headers)
+
+    def get_variation_url(self, main_variation_url, variation_key):
+        """
+        :param main_variation_url: fully formed url for link to the main variation of the item
+        :param variation_key: the item_key for the variation
+        :return: swaps out the item_key for the main variation with that for the given variation_key
+        """
+
+        new_url, num_replacements = re.subn(r'\w{2}\d{4}', variation_key, main_variation_url)
+        assert num_replacements==1, f"The number of replacements ({num_replacements}) is not exactly 1."
+
+        return new_url
 
     def find_str_in_selector_list_text(self, selector_list, regex):
         if type(selector_list) == scrapy.selector.unified.Selector:
@@ -127,6 +136,8 @@ class AdidasCaSpider(scrapy.Spider):
         html_js_raw in the entire text content of the <script> tag that includes the javascript
         Returns a reverse dictionary that can be used to identify the main variation code given a colour variation
         """
+        # todo: The get_main and exhaustive get_siblings dicts are unnecessary.
+        # todo: The only necessary data is {main_key: [all sibling_ keys including main, main_keys_2: ...]
 
         try:
             colour_variation_list = re.findall(r"colorVariations[^\]]*],", html_js_raw)
@@ -149,58 +160,49 @@ class AdidasCaSpider(scrapy.Spider):
 
         return {"get_main": get_main, "get_siblings": get_siblings}
 
-    def extract_item_code(self, url):
-        code = re.search(r'\w\w\d\d\d\d', url).group()
-        return code
-
     def parse_item_page(self, response, **kwargs):
+        cb_kwargs = kwargs
         sidebar = response.css("div[class*='sidebar-wrapper']")
 
         sale_price = sidebar.css("span[class*='price__value--sale']::text").get()
-        original_price = sidebar.css("span[class*='price__value--crossed']::text").get()
+        cb_kwargs["sale_price"] = get_price(sale_price)
 
-        colour = sidebar.css("h5[class*='color']::text").get()
+        original_price = sidebar.css("span[class*='price__value--crossed']::text").get()
+        cb_kwargs["original_price"] = get_price(original_price)
+
+        try:
+            cb_kwargs["sale_percentage"] = \
+                (cb_kwargs["original_price"] - cb_kwargs["sale_price"]) / cb_kwargs["original_price"]
+        except:
+            cb_kwargs["sale_percentage"] = 0
+
+        cb_kwargs["colour"] = sidebar.css("h5[class*='color']::text").get()
 
         rating_selector = sidebar.css("button[data-auto-id*=rating-review]")
         parse_rating = self.get_rating(rating_selector)
-        rating = parse_rating['num_ratings']
-        rating = parse_rating['rating']
-        category_tags = self.get_category_tags(response.css("div[class*='pre-header']"))
+        cb_kwargs["num_rating"] = parse_rating['num_ratings']
+        cb_kwargs["rating"] = parse_rating['rating']
+
+        item_key = extract_item_code(response.url)
+        cb_kwargs["item_key"] = item_key
+        availability_url = f'https://www.adidas.ca/api/products/tf/{item_key}/availability?sitePath=en'
+        cb_kwargs["availability_url"] = availability_url
+        cb_kwargs["category_tags"] = self.get_category_tags(response.css("div[class*='pre-header']"))
         # remember to search both category_tags and brand_sub_category for tags.
-        print(response.url)
-        print(category_tags)
-        print(original_price)
+        img_url = response.css("link[id='pdp-hero-image']::attr(href)").get()
+        cb_kwargs["img_url"] = img_url.replace("images/h_320", "images/h_600")  # increase size of img to 600px
+
 
         # before indexing, check to be sure that this is a product page (sometimes there are incorrect links to wrong
         # pages). Also check that item stock != 0 and item sale_price < original price.
         # If all of these conditions are not met, skip indexing and raise error.
-        yield {}
 
+        request = scrapy.Request(availability_url,
+                                 callback=adidas_ca_availability.parse_availability,
+                                 headers=self.headers,
+                                 cb_kwargs=cb_kwargs)
 
-        # get available sizes
-        # get stock if available
-
-        # get tags. e.g. "Women", "Clothing"
-        # get other search tags (e.g. "WOMEN", "ORIGINALS")
-        pass
-
-    def parse_item_subpage(self, response):
-        pass
-
-    def append_selectors(self, *args):
-        """
-        Each argument must be a string.
-        Simply appends all of the given arguments with a space in between and returns.
-        """
-
-        return_string = ""
-
-        for a in args:
-            assert type(a) is str, "append_selectors given non-string argument"
-            return_string = return_string + " " + a.strip()
-
-        return_string = return_string.strip()  # remove whitespace after last selector
-        return return_string
+        yield request
 
     def get_rating(self, rating_selector):
         # 5 stars, each star goes from 12-88% If a star is not coloured, it will still be 12%
