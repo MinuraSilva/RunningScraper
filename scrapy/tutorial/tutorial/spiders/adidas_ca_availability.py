@@ -1,18 +1,14 @@
+import re
+import json
+import logging
+
 import scrapy
 
-# for handling errback / errors
-from scrapy.spidermiddlewares.httperror import HttpError
-from twisted.internet.error import DNSLookupError
-from twisted.internet.error import TimeoutError, TCPTimedOutError
-
-import logging
-import re
-
-import json
+logger = logging.getLogger("adidas_ca")
 
 
-def parse_availability(response, **kwargs):
-    cb_kwargs = kwargs
+def parse_availability(response, **cb_kwargs):
+    availability_kwargs = {}
 
     raw_text = response.css("::text").get()
     availability_json = json.loads(raw_text)
@@ -34,11 +30,17 @@ def parse_availability(response, **kwargs):
             list_of_available_sizes.append(size)
             dict_of_stock[size] = stock
             dict_of_sku[size] = sku
+        availability_kwargs["available_sizes"] = list_of_available_sizes
+        availability_kwargs["stock"] = dict_of_stock
+        availability_kwargs["sku"] = dict_of_sku
+
         print(list_of_available_sizes)
         print(dict_of_stock)
         print(dict_of_sku)
 
-    else:
-        pass  # none available; discard
+        cb_kwargs["availability_kwargs"] = availability_kwargs
+        yield cb_kwargs
 
-    yield {}
+    else:
+        logger.warning(f"No stock available for item code {id}. Skipping item")
+        yield  # none available; discard

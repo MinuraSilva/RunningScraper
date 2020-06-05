@@ -1,17 +1,13 @@
+import re
+import logging
+
 import scrapy
 
-# for handling errback / errors
-
-import logging
-import re
-
-import tutorial.spiders.adidas_ca_availability as adidas_ca_availability
-
 from .adidas_ca_helpers import extract_item_code, append_selectors, headers
-
 from .adidas_ca_item_page import parse_item_page
 
 logger = logging.getLogger("adidas_ca")
+
 
 def parse_main(response):
 
@@ -23,48 +19,46 @@ def parse_main(response):
     assert len(js_code) == 1, "Expects exactly one script tag with the colourVariation information"
     js_text = js_code[0].css("::text").get()
     parsed_variations = parse_colour_variations(js_text, response.url)
-    # parsed variations should be passed to a separate ES database for joining at query time
 
     for item in items:
-        cb_kwargs = dict()
+        main_parse_kwargs = dict()
 
         info_card = "div.gl-product-card__details"
         main_item_url = item.css(append_selectors(info_card, "a::attr(href)")).get()
         main_item_url = response.urljoin(main_item_url)
-        cb_kwargs["main_item_url"] = main_item_url
+        main_parse_kwargs["main_item_url"] = main_item_url
         main_item_key = extract_item_code(main_item_url)
-        cb_kwargs["main_item_key"] = main_item_key
+        main_parse_kwargs["main_item_key"] = main_item_key
 
-        cb_kwargs["item_title"] = item.css(append_selectors(info_card, 'span[class$="name"]::text')).get()
-        cb_kwargs["item_sub_brand"] = item.css(append_selectors(info_card, 'div[class$="category"]::text')).get()
-        cb_kwargs["item_type"] = item.css(append_selectors(info_card, 'div[class$="category"]::attr(title)')).get()
-        cb_kwargs["item_num_colours"] = item.css(append_selectors(info_card, 'div[class$="color"]::text')).get()
+        main_parse_kwargs["item_title"] = item.css(append_selectors(info_card, 'span[class$="name"]::text')).get()
+        main_parse_kwargs["item_sub_brand"] = item.css(append_selectors(info_card, 'div[class$="category"]::text')).get()
+        main_parse_kwargs["item_type"] = item.css(append_selectors(info_card, 'div[class$="category"]::attr(title)')).get()
+        main_parse_kwargs["item_num_colours"] = item.css(append_selectors(info_card, 'div[class$="color"]::text')).get()
 
-        cb_kwargs["main_img_url"] = item.css("img:nth-child(1)::attr(src)").get()
-        cb_kwargs["source_page"] = response.url
+        main_parse_kwargs["main_img_url"] = item.css("img:nth-child(1)::attr(src)").get()
+        main_parse_kwargs["source_page"] = response.url
 
         try:
-            cb_kwargs["main_variation"] = parsed_variations['get_main'][main_item_key]
-            cb_kwargs["sibling_variations"] = parsed_variations['get_siblings'][main_item_key]
+            main_parse_kwargs["main_variation"] = parsed_variations['get_main'][main_item_key]
+            main_parse_kwargs["sibling_variations"] = parsed_variations['get_siblings'][main_item_key]
         except:
             # dictionary lookup will fail if there are no variations
-            cb_kwargs["main_variation"] = [main_item_key]
-            cb_kwargs["sibling_variations"] = [main_item_key]
+            main_parse_kwargs["main_variation"] = [main_item_key]
+            main_parse_kwargs["sibling_variations"] = [main_item_key]
 
-        for variation in cb_kwargs["sibling_variations"]:
-            variation_url = get_variation_url(cb_kwargs["main_item_url"], variation)
+        cb_kwargs = {"main_parse_kwargs": main_parse_kwargs}
 
-            print(variation_url)
+        for variation in main_parse_kwargs["sibling_variations"]:
+            variation_url = get_variation_url(main_parse_kwargs["main_item_url"], variation)
 
-            # for colour_variatiton in cb_kwargs["sibling_variations"]
+            # for colour_variation in main_parse_kwargs["sibling_variations"]
             request = scrapy.Request(variation_url,
                                      callback=parse_item_page,
                                      headers=headers,
                                      cb_kwargs=cb_kwargs)
-            # yield cb_kwargs
             yield request
 
-    # todo: uncomment when done; follow next link
+    # Follow next page
     next_page = response.css("div[class*=pagination__control--next] a::attr(href)").get()
 
     if next_page is not None:

@@ -1,6 +1,7 @@
-# for handling errback / errors
-
 import re
+import logging
+
+logger = logging.getLogger("adidas_ca")
 
 headers = {
         "Host": "www.adidas.ca",
@@ -8,6 +9,7 @@ headers = {
         "Accept-Language": "en-US,en;q=0.5",
         "Connection": "keep-alive",
     }
+
 
 def extract_item_code(url):
     code = re.search(r'\w\w\d\d\d\d', url).group()

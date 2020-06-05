@@ -1,53 +1,53 @@
+import re
+import logging
+
 import scrapy
 
-# for handling errback / errors
-
-import logging
-import re
-
-import tutorial.spiders.adidas_ca_availability as adidas_ca_availability
-
 from .adidas_ca_helpers import extract_item_code, append_selectors, headers
+from .adidas_ca_availability import parse_availability
+
+logger = logging.getLogger("adidas_ca")
 
 
-def parse_item_page(response, **kwargs):
-    cb_kwargs = kwargs
+def parse_item_page(response, **cb_kwargs):
+    item_page_kwargs = {}
     sidebar = response.css("div[class*='sidebar-wrapper']")
 
     sale_price = sidebar.css("span[class*='price__value--sale']::text").get()
-    cb_kwargs["sale_price"] = get_price(sale_price)
+    item_page_kwargs["sale_price"] = get_price(sale_price)
 
     original_price = sidebar.css("span[class*='price__value--crossed']::text").get()
-    cb_kwargs["original_price"] = get_price(original_price)
+    item_page_kwargs["original_price"] = get_price(original_price)
 
     try:
-        cb_kwargs["sale_percentage"] = \
-            (cb_kwargs["original_price"] - cb_kwargs["sale_price"]) / cb_kwargs["original_price"]
+        item_page_kwargs["sale_percentage"] = \
+            (item_page_kwargs["original_price"] - item_page_kwargs["sale_price"]) / item_page_kwargs["original_price"]
     except:
-        cb_kwargs["sale_percentage"] = 0
+        item_page_kwargs["sale_percentage"] = 0
 
-    cb_kwargs["colour"] = sidebar.css("h5[class*='color']::text").get()
+    item_page_kwargs["colour"] = sidebar.css("h5[class*='color']::text").get()
 
     rating_selector = sidebar.css("button[data-auto-id*=rating-review]")
     parse_rating = get_rating(rating_selector)
-    cb_kwargs["num_rating"] = parse_rating['num_ratings']
-    cb_kwargs["rating"] = parse_rating['rating']
+    item_page_kwargs["num_rating"] = parse_rating['num_ratings']
+    item_page_kwargs["rating"] = parse_rating['rating']
 
     item_key = extract_item_code(response.url)
-    cb_kwargs["item_key"] = item_key
+    item_page_kwargs["item_key"] = item_key
     availability_url = f'https://www.adidas.ca/api/products/tf/{item_key}/availability?sitePath=en'
-    cb_kwargs["availability_url"] = availability_url
-    cb_kwargs["category_tags"] = get_category_tags(response.css("div[class*='pre-header']"))
+    item_page_kwargs["availability_url"] = availability_url
+    item_page_kwargs["category_tags"] = get_category_tags(response.css("div[class*='pre-header']"))
     # remember to search both category_tags and brand_sub_category for tags.
     img_url = response.css("link[id='pdp-hero-image']::attr(href)").get()
-    cb_kwargs["img_url"] = img_url.replace("images/h_320", "images/h_600")  # increase size of img to 600px
+    item_page_kwargs["img_url"] = img_url.replace("images/h_320", "images/h_600")  # increase size of img to 600px
 
     # before indexing, check to be sure that this is a product page (sometimes there are incorrect links to wrong
     # pages). Also check that item stock != 0 and item sale_price < original price.
     # If all of these conditions are not met, skip indexing and raise error.
 
+    cb_kwargs["item_page_kwargs"] = item_page_kwargs
     request = scrapy.Request(availability_url,
-                             callback=adidas_ca_availability.parse_availability,
+                             callback=parse_availability,
                              headers=headers,
                              cb_kwargs=cb_kwargs)
 
