@@ -17,13 +17,15 @@ def parse_item_page(response, **cb_kwargs):
     item_page_kwargs["sale_price"] = get_price(sale_price)
 
     original_price = sidebar.css("span[class*='price__value--crossed']::text").get()
+    if type(original_price)!= str:
+        # if the item is not on sale (.get() will return NoneType), the original price has a different tag.
+        original_price = sidebar.css("span[class*='price__value']::text").get()
+
     item_page_kwargs["original_price"] = get_price(original_price)
 
-    try:
-        item_page_kwargs["sale_percentage"] = \
-            (item_page_kwargs["original_price"] - item_page_kwargs["sale_price"]) / item_page_kwargs["original_price"]
-    except:
-        item_page_kwargs["sale_percentage"] = 0
+
+    item_page_kwargs["sale_percentage"] = get_sale_percentage(item_page_kwargs["original_price"],
+                                                              item_page_kwargs["sale_price"])
 
     item_page_kwargs["colour"] = sidebar.css("h5[class*='color']::text").get()
 
@@ -99,3 +101,9 @@ def get_price(price_string):
         return float(re.search(r'\d+(\.\d+)?', price_string).group())
     else:
         return float(-1)  # unable to find price
+
+def get_sale_percentage(original_price, sale_price):
+    if ((original_price==float(-1)) or (sale_price==(-1))):
+        return 0
+    else:
+        return (original_price-sale_price)/original_price

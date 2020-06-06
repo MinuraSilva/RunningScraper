@@ -1,3 +1,4 @@
+import copy
 import re
 import logging
 
@@ -46,16 +47,20 @@ def parse_main(response):
             main_parse_kwargs["main_variation"] = [main_item_key]
             main_parse_kwargs["sibling_variations"] = [main_item_key]
 
-        cb_kwargs = {"main_parse_kwargs": main_parse_kwargs}
-
         for variation in main_parse_kwargs["sibling_variations"]:
+
             variation_url = get_variation_url(main_parse_kwargs["main_item_url"], variation)
+            main_parse_kwargs["variation_url"] = variation_url
+
+            cb_kwargs = {"main_parse_kwargs": main_parse_kwargs}
+            cb_kwargs_deep_cp = copy.deepcopy(cb_kwargs)  # otherwise leads wrong data due to the shallow copy of dict
+            # being modified by later iterations of this for loop.
 
             # for colour_variation in main_parse_kwargs["sibling_variations"]
             request = scrapy.Request(variation_url,
                                      callback=parse_item_page,
                                      headers=headers,
-                                     cb_kwargs=cb_kwargs)
+                                     cb_kwargs=cb_kwargs_deep_cp)
             yield request
 
     # Follow next page
