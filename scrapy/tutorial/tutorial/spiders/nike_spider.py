@@ -49,7 +49,6 @@ class NikeSpider(scrapy.Spider):
             cb_kwargs["image_url"] = item.css('img::attr(src)').get()
 
 
-
             request = scrapy.Request(item_url,
                                      callback=self.parse_item,
                                      cb_kwargs=cb_kwargs)
