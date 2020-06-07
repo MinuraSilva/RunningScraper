@@ -1,6 +1,7 @@
 import copy
 import re
 import logging
+from urllib.parse import urlparse
 
 import scrapy
 
@@ -23,6 +24,7 @@ def parse_main(response):
 
     for item in items:
         main_parse_kwargs = dict()
+        main_parse_kwargs["domain"] = urlparse(response.url).netloc
 
         info_card = "div.gl-product-card__details"
         main_item_url = item.css(append_selectors(info_card, "a::attr(href)")).get()

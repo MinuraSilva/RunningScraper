@@ -28,10 +28,10 @@ class AdidasCaSpider(scrapy.Spider):
 
     def start_requests(self):
         urls = [
-            # 'https://www.adidas.ca/en/men-clothing-outlet',
+            'https://www.adidas.ca/en/men-clothing-outlet',
             # 'https://www.adidas.ca/en/men-clothing-outlet?start=720'
             # 'https://www.adidas.ca/en/women-shoes-outlet?start=624',
-            'https://www.adidas.ca/en/men-clothing-outlet?start=768'
+            # 'https://www.adidas.ca/en/men-clothing-outlet?start=768'
         ]
 
         for url in urls:
