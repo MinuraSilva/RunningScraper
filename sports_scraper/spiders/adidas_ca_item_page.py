@@ -43,6 +43,9 @@ def parse_item_page(response, **cb_kwargs):
     img_url = response.css("link[id='pdp-hero-image']::attr(href)").get()
     item_page_kwargs["img_url"] = img_url.replace("images/h_320", "images/h_600")  # increase size of img to 600px
 
+    item_page_kwargs["sub_title"] = response.css('div[class^="text-content"] h4::text').get()
+    item_page_kwargs["description"] = response.css('div[class^="text-content"] p::text').get()
+
     # before indexing, check to be sure that this is a product page (sometimes there are incorrect links to wrong
     # pages). Also check that item stock != 0 and item sale_price < original price.
     # If all of these conditions are not met, skip indexing and raise error.
