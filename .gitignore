@@ -3,4 +3,4 @@ __pycache__
 *.json
 table.html
 *.txt
-
+*/.idea/*

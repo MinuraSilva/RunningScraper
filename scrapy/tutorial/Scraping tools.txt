@@ -1,4 +1,0 @@
-- QuickSourceViewer chrome extension to view javascript components.
-- Python package json2html or website http://json2html.varunmalhotra.xyz/ to convert json to javascript table.
-- Tips on parsing dynamic content: https://docs.scrapy.org/en/latest/topics/dynamic-content.html
-
