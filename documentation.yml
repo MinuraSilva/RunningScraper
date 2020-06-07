@@ -1,0 +1,2 @@
+# Ignore these files for calculating github language statistics.
+- ^sports_scraper/Other/
