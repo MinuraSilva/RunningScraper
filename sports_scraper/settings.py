@@ -62,11 +62,15 @@ ROBOTSTXT_OBEY = True
 #    'scrapy.extensions.telnet.TelnetConsole': None,
 #}
 
+# Elasticsearch settings
+ES_URI = 'localhost'
+ES_PORT = '9200'
+
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'sports_scraper.pipelines.SportsScraperPipeline': 300,
-#}
+ITEM_PIPELINES = {
+   'sports_scraper.pipelines.ElasticsearchPipeline': 100,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
