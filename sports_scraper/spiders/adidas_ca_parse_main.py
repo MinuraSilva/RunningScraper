@@ -1,6 +1,7 @@
 import copy
 import re
 import logging
+from datetime import datetime
 from urllib.parse import urlparse
 
 import scrapy
@@ -24,6 +25,7 @@ def parse_main(response):
 
     for item in items:
         main_parse_kwargs = dict()
+        main_parse_kwargs["scrape_time"] = datetime.now()
         main_parse_kwargs["domain"] = urlparse(response.url).netloc
         main_parse_kwargs["brand"] = "adidas"
 

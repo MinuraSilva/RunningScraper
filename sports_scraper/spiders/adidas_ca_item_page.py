@@ -23,6 +23,10 @@ def parse_item_page(response, **cb_kwargs):
 
     item_page_kwargs["original_price"] = get_price(original_price)
 
+    if item_page_kwargs["sale_price"] == float(-1):
+        item_page_kwargs["on_sale"] = False
+    else:
+        item_page_kwargs["on_sale"] = True
 
     item_page_kwargs["sale_percentage"] = get_sale_percentage(item_page_kwargs["original_price"],
                                                               item_page_kwargs["sale_price"])
