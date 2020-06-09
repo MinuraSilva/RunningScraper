@@ -2,7 +2,7 @@
 
 ## Tips on Scraping Dynamic Content:
 - Scrapy information on how to Scrape [Dynamic Content](https://docs.scrapy.org/en/latest/topics/dynamic-content.html)
-- See the [New Features](https://github.com/MinuraSilva/RunningScraper/projects/1#card-39618818) tab in Projects for more info.
+- See the [New Features](https://github.com/MinuraSilva/RunningScraper/projects/1#card-39618818) tab in Projects for more info.<br><br>
 
 If a value is updated by javascript, then it will not be possible to extract that value simply by using a CSS selector on the HTML. There are two main ways the dynamic data is stored:
 #### 1. Data stored in block of JavaScript in the HTML file:
