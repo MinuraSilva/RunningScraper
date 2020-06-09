@@ -1,5 +1,23 @@
 # RunningScraper
 
+## How to Run Scraper
+More info [here](https://github.com/MinuraSilva/RunningScraper/blob/master/other/scrapy_commands.py)
+
+`scrapy crawl adidas_ca -o quotes.json`
+adidas_ca is the name assigned to the scraper. Remember to change the start URL to be the last page in Outlet items to avoid scraping too many items during testing.
+
+## Finding CSS selectors quickly:
+- Use the scrapy shell (see the 'More info' link above for headers to spoof a browser.<br>
+`$ scrapy shell`<br>
+`>>> from scrapy import Request`<br>
+`>>> req = Request('yoururl.com', headers={"header1":"value1"})`<br>
+`>>> fetch(req)`<br>
+`>>> response.css('...')`<br>
+- Use Chrome to test the selector.<br>
+`Chrome Dev Tools -> ELements tab -> click on HTML and press Ctrl +F` You can now type in a selector in the search box. <br>
+e.g. `div[class*=item] img[src$=jpg]`<br>
+Note: Chrome will not work with `::text` or `::attr(attr_name)` extractors. Also, remember not to use the .get() method used by Scrapy in Chrome.
+
 ## Tips on Scraping Dynamic Content:
 - Scrapy information on how to Scrape [Dynamic Content](https://docs.scrapy.org/en/latest/topics/dynamic-content.html)
 - See the [New Features](https://github.com/MinuraSilva/RunningScraper/projects/1#card-39618818) tab in Projects for more info.<br><br>
