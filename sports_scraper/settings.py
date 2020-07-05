@@ -11,7 +11,7 @@
 
 BOT_NAME = 'sports_scraper'
 
-SPIDER_MODULES = ['sports_scraper.spiders']
+SPIDER_MODULES = ['sports_scraper.spiders.adidas_ca']
 NEWSPIDER_MODULE = 'sports_scraper.spiders'
 
 
@@ -68,9 +68,9 @@ ES_PORT = '9200'
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-   'sports_scraper.pipelines.ElasticsearchPipeline': 100,
-}
+# ITEM_PIPELINES = {
+#    'sports_scraper.pipelines.ElasticsearchPipeline': 100,
+# }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

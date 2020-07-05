@@ -12,7 +12,7 @@ from elasticsearch import Elasticsearch
 #     def process_item(self, item, spider):
 #         return item
 
-
+# ######################## Currently disabled in settings.py #####################
 class ElasticsearchPipeline:
 
     index_name = 'adidas_ca_items'  # the index name for indexing regular product items
