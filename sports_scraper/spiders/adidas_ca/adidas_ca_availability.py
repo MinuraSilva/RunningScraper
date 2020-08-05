@@ -30,8 +30,8 @@ def parse_availability(response, **cb_kwargs):
         dict_of_sku[size] = sku
 
     availability_kwargs["available_sizes"] = list_of_available_sizes
-    availability_kwargs["stock"] = dict_of_stock
-    availability_kwargs["sku"] = dict_of_sku
+    availability_kwargs["stock"] = json.dumps(dict_of_stock)
+    availability_kwargs["sku"] = json.dumps(dict_of_sku)
 
     print(list_of_available_sizes)
     print(dict_of_stock)
