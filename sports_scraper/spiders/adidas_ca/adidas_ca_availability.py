@@ -25,7 +25,9 @@ def parse_availability(response, **cb_kwargs):
         sku = variation["sku"]
         availability_status = variation["availability_status"]  # not needed currently
 
-        list_of_available_sizes.append(size)
+        if stock > 0:
+            list_of_available_sizes.append(size)
+
         dict_of_stock[size] = stock
         dict_of_sku[size] = sku
 
