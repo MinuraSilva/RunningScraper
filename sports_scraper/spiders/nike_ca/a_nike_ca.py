@@ -3,7 +3,7 @@ import logging
 
 import scrapy
 
-from .nike_ca_parse_main import parse_main
+from .b_nike_ca_parse_main import parse_main
 
 # for handling errback / errors
 from scrapy.spidermiddlewares.httperror import HttpError
@@ -12,7 +12,7 @@ from twisted.internet.error import TimeoutError, TCPTimedOutError
 
 class NikeCaSpider(scrapy.Spider):
 
-    # todo: problem with logger
+    # todo: problem with logger in all of nike_ca. Also verify adidas_ca loggers work as expected.
     name = 'nike_ca'
 
     headers = ""

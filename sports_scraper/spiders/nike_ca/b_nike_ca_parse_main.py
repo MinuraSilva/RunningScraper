@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
 
-import copy
-import re
 import logging
-from datetime import datetime
-from urllib.parse import urlparse, quote_plus, unquote
+from urllib.parse import quote_plus
 import re
 import json
 
 import scrapy
 
-from .nike_ca_helpers import extract_val, nike_base64_to_url_encoding
+from .nike_ca_helpers import find_data
+from .nike_ca_helpers import extract_val_re
+
+from .c_nike_ca_results_page import parse_results_page
 
 logger = logging.getLogger("")
 
+
 def parse_main(response):
+    """
+    First build a list of links of api calls for all of the pages of results.
+    """
 
     try:
         json_string = find_data(response)
@@ -27,29 +31,18 @@ def parse_main(response):
         # with open("nike.json", 'w', encoding='utf-8') as nike:
         #     nike.writelines(json_string)
 
-        next_page = extract_val(data, "pageData")
+        next_page = extract_val_re(data, "pageData")
         assert len(next_page) == 1, "could not extract api URL"
 
         pageData = next_page[0]
 
-        generate_api_calls(pageData)
+        list_of_page_urls = generate_api_calls(pageData)  # an api call per page
 
-        yield {}
-
-
-def find_data(response):
-    """returns the part of the selector that contains the json as string. Gets everything in between { }"""
-
-    search_script = re.compile("\s*window\.INITIAL_REDUX_STATE")  # start pattern for script containing data
-
-    for a in response.css("script"):
-        script = str(a.css("::text").get(default=""))
-        if search_script.match(script):
-            json_string = re.search("{.*}", script).group()
-
-            return json_string
-
-    raise ValueError("Could not find the script with data in html")
+        # just use a single page for testing
+        list_of_page_urls = [list_of_page_urls[0]]
+        for page_url in list_of_page_urls:
+            yield scrapy.Request(page_url,
+                                 parse_results_page)
 
 
 # construct api call urls
@@ -81,8 +74,4 @@ def generate_api_calls(pageData):
         full_url = base_url + encoded_uri
         list_of_urls.append(full_url)
 
-    for u in list_of_urls:
-        print(u)
-        print('\n')
-
-    pass
+    return list_of_urls
