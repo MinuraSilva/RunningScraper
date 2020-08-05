@@ -31,6 +31,9 @@ def parse_item_page(response, **cb_kwargs):
     item_page_kwargs["sale_percentage"] = get_sale_percentage(item_page_kwargs["original_price"],
                                                               item_page_kwargs["sale_price"])
 
+    item_page_kwargs["absolute_discount"] = get_absolute_discount(item_page_kwargs["original_price"],
+                                                              item_page_kwargs["sale_price"])
+
     item_page_kwargs["colour"] = sidebar.css("h5[class*='color']::text").get()
 
     rating_selector = sidebar.css("button[data-auto-id*=rating-review]")
@@ -114,3 +117,9 @@ def get_sale_percentage(original_price, sale_price):
         return 0
     else:
         return (original_price-sale_price)/original_price
+
+def get_absolute_discount(original_price, sale_price):
+    if ((original_price==float(-1)) or (sale_price==(-1))):
+        return 0
+    else:
+        return (original_price-sale_price)
