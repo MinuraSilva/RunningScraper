@@ -48,7 +48,7 @@ def parse_main(response):
             main_parse_kwargs["sibling_variations"] = parsed_variations['get_siblings'][main_item_key]
         except:
             # dictionary lookup will fail if there are no variations
-            main_parse_kwargs["main_variation"] = [main_item_key]
+            main_parse_kwargs["main_variation"] = main_item_key
             main_parse_kwargs["sibling_variations"] = [main_item_key]
 
         for variation in main_parse_kwargs["sibling_variations"]:
