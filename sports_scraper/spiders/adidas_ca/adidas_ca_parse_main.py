@@ -39,7 +39,6 @@ def parse_main(response):
         main_parse_kwargs["item_title"] = item.css(append_selectors(info_card, 'span[class$="name"]::text')).get()
         main_parse_kwargs["item_sub_brand"] = item.css(append_selectors(info_card, 'div[class$="category"]::text')).get()
         main_parse_kwargs["item_type"] = item.css(append_selectors(info_card, 'div[class$="category"]::attr(title)')).get()
-        main_parse_kwargs["item_num_colours"] = item.css(append_selectors(info_card, 'div[class$="color"]::text')).get()
 
         main_parse_kwargs["main_img_url"] = item.css("img:nth-child(1)::attr(src)").get()
         main_parse_kwargs["source_page"] = response.url
