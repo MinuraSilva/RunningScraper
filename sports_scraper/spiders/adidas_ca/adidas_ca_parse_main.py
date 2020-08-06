@@ -35,7 +35,7 @@ def parse_main(response):
         main_item_url = response.urljoin(main_item_url)
         main_parse_kwargs["main_item_url"] = main_item_url
         main_item_key = extract_item_code(main_item_url)
-        main_parse_kwargs["main_item_key"] = main_item_key
+        # main_parse_kwargs["main_item_key"] = main_item_key  # redundant. Already provided in main_variation
 
         main_parse_kwargs["item_title"] = item.css(append_selectors(info_card, 'span[class$="name"]::text')).get()
         main_parse_kwargs["item_sub_brand"] = item.css(append_selectors(info_card, 'div[class$="category"]::text')).get()

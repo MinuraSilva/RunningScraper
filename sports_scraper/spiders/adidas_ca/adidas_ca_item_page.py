@@ -42,7 +42,7 @@ def parse_item_page(response, **cb_kwargs):
     item_page_kwargs["rating"] = parse_rating['rating']
 
     item_key = extract_item_code(response.url)
-    item_page_kwargs["item_key"] = item_key
+    item_page_kwargs["item_variation"] = item_key
     availability_url = f'https://www.adidas.ca/api/products/tf/{item_key}/availability?sitePath=en'
     item_page_kwargs["availability_url"] = availability_url
     item_page_kwargs["category_tags"] = get_category_tags(response.css("div[class*='pre-header']"))
