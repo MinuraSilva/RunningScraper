@@ -57,7 +57,7 @@ def parse_item_page(response, **cb_kwargs):
     # pages). Also check that item stock != 0 and item sale_price < original price.
     # If all of these conditions are not met, skip indexing and raise error.
 
-    cb_kwargs["item_page_kwargs"] = item_page_kwargs
+    cb_kwargs["item_page"] = item_page_kwargs
     request = scrapy.Request(availability_url,
                              callback=parse_availability,
                              headers=headers,

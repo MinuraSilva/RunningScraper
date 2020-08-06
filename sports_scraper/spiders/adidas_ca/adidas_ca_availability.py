@@ -39,5 +39,5 @@ def parse_availability(response, **cb_kwargs):
     print(dict_of_stock)
     print(dict_of_sku)
 
-    cb_kwargs["availability_kwargs"] = availability_kwargs
+    cb_kwargs["availability_page"] = availability_kwargs
     yield cb_kwargs

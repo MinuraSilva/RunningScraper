@@ -57,7 +57,7 @@ def parse_main(response):
             variation_url = get_variation_url(main_parse_kwargs["main_item_url"], variation)
             main_parse_kwargs["variation_url"] = variation_url
 
-            cb_kwargs = {"main_parse_kwargs": main_parse_kwargs}
+            cb_kwargs = {"search_page": main_parse_kwargs}
             cb_kwargs_deep_cp = copy.deepcopy(cb_kwargs)  # otherwise leads wrong data due to the shallow copy of dict
             # being modified by later iterations of this for loop.
 
