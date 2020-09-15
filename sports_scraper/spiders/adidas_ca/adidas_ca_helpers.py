@@ -30,3 +30,30 @@ def append_selectors(*args):
 
     return_string = return_string.strip()  # remove whitespace after last selector
     return return_string
+
+
+def get_mens_size(size_code):
+    assert (450 <= size_code <= 820)
+
+    if size_code <= 750:
+        return (size_code-450)/20
+    elif size_code == 760:
+        return 16.0
+    else:
+        return (size_code-780)/10 + 17
+
+
+def shoe_size_conversion(size_str, sku):
+
+    try:
+        size_code = int(sku.split("_")[1])
+        mens_size = get_mens_size(size_code)
+        womens_size = mens_size + 1
+
+        mens_size = f"M{mens_size}"
+        womens_size = f"W{womens_size}"
+
+        return [mens_size, womens_size]
+
+    except:
+        return [size_str]

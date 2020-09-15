@@ -1,7 +1,9 @@
 import copy
 import re
 import logging
+from datetime import datetime
 from urllib.parse import urlparse
+from pytz import utc
 
 import scrapy
 
@@ -24,19 +26,20 @@ def parse_main(response):
 
     for item in items:
         main_parse_kwargs = dict()
+        main_parse_kwargs["scrape_time"] = datetime.utcnow().replace(tzinfo=utc)  # get UTC time
         main_parse_kwargs["domain"] = urlparse(response.url).netloc
+        main_parse_kwargs["brand"] = "adidas"
 
         info_card = "div.gl-product-card__details"
         main_item_url = item.css(append_selectors(info_card, "a::attr(href)")).get()
         main_item_url = response.urljoin(main_item_url)
         main_parse_kwargs["main_item_url"] = main_item_url
         main_item_key = extract_item_code(main_item_url)
-        main_parse_kwargs["main_item_key"] = main_item_key
+        # main_parse_kwargs["main_item_key"] = main_item_key  # redundant. Already provided in main_variation
 
         main_parse_kwargs["item_title"] = item.css(append_selectors(info_card, 'span[class$="name"]::text')).get()
         main_parse_kwargs["item_sub_brand"] = item.css(append_selectors(info_card, 'div[class$="category"]::text')).get()
         main_parse_kwargs["item_type"] = item.css(append_selectors(info_card, 'div[class$="category"]::attr(title)')).get()
-        main_parse_kwargs["item_num_colours"] = item.css(append_selectors(info_card, 'div[class$="color"]::text')).get()
 
         main_parse_kwargs["main_img_url"] = item.css("img:nth-child(1)::attr(src)").get()
         main_parse_kwargs["source_page"] = response.url
@@ -46,7 +49,7 @@ def parse_main(response):
             main_parse_kwargs["sibling_variations"] = parsed_variations['get_siblings'][main_item_key]
         except:
             # dictionary lookup will fail if there are no variations
-            main_parse_kwargs["main_variation"] = [main_item_key]
+            main_parse_kwargs["main_variation"] = main_item_key
             main_parse_kwargs["sibling_variations"] = [main_item_key]
 
         for variation in main_parse_kwargs["sibling_variations"]:
@@ -54,7 +57,7 @@ def parse_main(response):
             variation_url = get_variation_url(main_parse_kwargs["main_item_url"], variation)
             main_parse_kwargs["variation_url"] = variation_url
 
-            cb_kwargs = {"main_parse_kwargs": main_parse_kwargs}
+            cb_kwargs = {"search_page": main_parse_kwargs}
             cb_kwargs_deep_cp = copy.deepcopy(cb_kwargs)  # otherwise leads wrong data due to the shallow copy of dict
             # being modified by later iterations of this for loop.
 

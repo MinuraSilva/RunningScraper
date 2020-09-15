@@ -23,8 +23,15 @@ def parse_item_page(response, **cb_kwargs):
 
     item_page_kwargs["original_price"] = get_price(original_price)
 
+    if item_page_kwargs["sale_price"] == float(-1):
+        item_page_kwargs["on_sale"] = False
+    else:
+        item_page_kwargs["on_sale"] = True
 
     item_page_kwargs["sale_percentage"] = get_sale_percentage(item_page_kwargs["original_price"],
+                                                              item_page_kwargs["sale_price"])
+
+    item_page_kwargs["absolute_discount"] = get_absolute_discount(item_page_kwargs["original_price"],
                                                               item_page_kwargs["sale_price"])
 
     item_page_kwargs["colour"] = sidebar.css("h5[class*='color']::text").get()
@@ -35,7 +42,7 @@ def parse_item_page(response, **cb_kwargs):
     item_page_kwargs["rating"] = parse_rating['rating']
 
     item_key = extract_item_code(response.url)
-    item_page_kwargs["item_key"] = item_key
+    item_page_kwargs["item_variation"] = item_key
     availability_url = f'https://www.adidas.ca/api/products/tf/{item_key}/availability?sitePath=en'
     item_page_kwargs["availability_url"] = availability_url
     item_page_kwargs["category_tags"] = get_category_tags(response.css("div[class*='pre-header']"))
@@ -43,11 +50,14 @@ def parse_item_page(response, **cb_kwargs):
     img_url = response.css("link[id='pdp-hero-image']::attr(href)").get()
     item_page_kwargs["img_url"] = img_url.replace("images/h_320", "images/h_600")  # increase size of img to 600px
 
+    item_page_kwargs["sub_title"] = response.css('div[class^="text-content"] h5[class^="gl-heading"]::text').get()
+    item_page_kwargs["description"] = response.css('div[class^="text-content"] p::text').get()
+
     # before indexing, check to be sure that this is a product page (sometimes there are incorrect links to wrong
     # pages). Also check that item stock != 0 and item sale_price < original price.
     # If all of these conditions are not met, skip indexing and raise error.
 
-    cb_kwargs["item_page_kwargs"] = item_page_kwargs
+    cb_kwargs["item_page"] = item_page_kwargs
     request = scrapy.Request(availability_url,
                              callback=parse_availability,
                              headers=headers,
@@ -107,3 +117,9 @@ def get_sale_percentage(original_price, sale_price):
         return 0
     else:
         return (original_price-sale_price)/original_price
+
+def get_absolute_discount(original_price, sale_price):
+    if ((original_price==float(-1)) or (sale_price==(-1))):
+        return 0
+    else:
+        return (original_price-sale_price)
