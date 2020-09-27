@@ -1,6 +1,7 @@
 # RunningScraper
 A web scraper for extracting data from online stores selling athletic gear (originally intended only for running gear, hence the name) and indexing in an Elasticsearch database with the purpose of finding discounted products.<br>
-Currently works for adidas.ca. End goal is to scrape multiple sites including Reebok, Nike, Footlocker and MEC to provide a centralised store of the best deals on athletic gear.
+Currently works for adidas.ca. End goal is to scrape multiple sites including Reebok, Nike, Footlocker and MEC to provide a centralised store of the best deals on athletic gear.<br><br>
+REST API for retrieving this data can be found in [RunningScraperAPI](https://github.com/MinuraSilva/RunningScraper).
 
 ## How to Run Scraper
 `scrapy crawl adidas_ca -o quotes.json`<br>
