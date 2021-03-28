@@ -30,7 +30,7 @@ def parse_main(response):
         main_parse_kwargs["domain"] = urlparse(response.url).netloc
         main_parse_kwargs["brand"] = "adidas"
 
-        info_card = "div.gl-product-card__details"
+        info_card = "div.gl-product-card"
         main_item_url = item.css(append_selectors(info_card, "a::attr(href)")).get()
         main_item_url = response.urljoin(main_item_url)
         main_parse_kwargs["main_item_url"] = main_item_url

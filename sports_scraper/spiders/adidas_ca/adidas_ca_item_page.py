@@ -13,10 +13,10 @@ def parse_item_page(response, **cb_kwargs):
     item_page_kwargs = {}
     sidebar = response.css("div[class*='sidebar-wrapper']")
 
-    sale_price = sidebar.css("span[class*='price__value--sale']::text").get()
+    sale_price = sidebar.css("div[class*='gl-price-item--sale']::text").get()
     item_page_kwargs["sale_price"] = get_price(sale_price)
 
-    original_price = sidebar.css("span[class*='price__value--crossed']::text").get()
+    original_price = sidebar.css("div[class*='gl-price-item--crossed']::text").get()
     if type(original_price)!= str:
         # if the item is not on sale (.get() will return NoneType), the original price has a different tag.
         original_price = sidebar.css("span[class*='price__value']::text").get()
@@ -34,9 +34,9 @@ def parse_item_page(response, **cb_kwargs):
     item_page_kwargs["absolute_discount"] = get_absolute_discount(item_page_kwargs["original_price"],
                                                               item_page_kwargs["sale_price"])
 
-    item_page_kwargs["colour"] = sidebar.css("h5[class*='color']::text").get()
+    item_page_kwargs["colour"] = sidebar.css("h5[class*='color'] span::text").get()
 
-    rating_selector = sidebar.css("button[data-auto-id*=rating-review]")
+    rating_selector = sidebar.css("span[class*=star-rating]")
     parse_rating = get_rating(rating_selector)
     item_page_kwargs["num_rating"] = parse_rating['num_ratings']
     item_page_kwargs["rating"] = parse_rating['rating']
@@ -50,8 +50,12 @@ def parse_item_page(response, **cb_kwargs):
     img_url = response.css("link[id='pdp-hero-image']::attr(href)").get()
     item_page_kwargs["img_url"] = img_url.replace("images/h_320", "images/h_600")  # increase size of img to 600px
 
-    item_page_kwargs["sub_title"] = response.css('div[class^="text-content"] h5[class^="gl-heading"]::text').get()
-    item_page_kwargs["description"] = response.css('div[class^="text-content"] p::text').get()
+    # Disabled because this is moved to a script tag in the non-JS version of the webpage.
+    # Now in body->script->window.Data_Store (need to parse messy JSON).
+    # item_page_kwargs["sub_title"] = response.css('div[class^="text-content"] h5[class^="gl-heading"]::text').get()
+
+    # item_page_kwargs["description"] = response.css('div[class^="text-content"] p::text').get()
+    item_page_kwargs["description"] = response.css('meta#meta-og-description::attr(content)').get()
 
     # before indexing, check to be sure that this is a product page (sometimes there are incorrect links to wrong
     # pages). Also check that item stock != 0 and item sale_price < original price.
